@@ -1,10 +1,14 @@
 const express = require('express');
 const cors = require('cors');
+const bodyParser = require('body-parser'); // body-parser 추가
 const app = express();
 const PORT = 3000;
 
 // CORS 설정
 app.use(cors());
+app.use(bodyParser.json()); // JSON 파싱 미들웨어 추가
+
+
 
 // 방 정보를 저장할 변수
 let rooms = [];
