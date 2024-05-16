@@ -1,9 +1,30 @@
-var express = require('express');
-var router = express.Router();
+// server.js
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index.html');
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+
+const PORT = process.env.PORT || 5000;
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
+
+io.on('connection', (socket) => {
+  console.log('New client connected');
+
+  socket.on('join_room', ({ username, room }) => {
+    socket.join(room);
+    console.log(`${username} joined room ${room}`);
+  });
+
+  socket.on('send_message', ({ username, room, message }) => {
+    io.to(room).emit('receive_message', { username, message });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
 });
 
-module.exports = router;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
