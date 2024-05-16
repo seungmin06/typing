@@ -1,43 +1,40 @@
-// server.js
-
 const express = require('express');
-const bodyParser = require('body-parser');
-
+const cors = require('cors');
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
-// 방 정보를 저장할 배열
+// CORS 설정
+app.use(cors());
+
+// 방 정보를 저장할 변수
 let rooms = [];
 
-app.use(bodyParser.json());
-
-// 방 목록을 가져오는 엔드포인트
-app.get('/api/rooms', (req, res) => {
-  res.json(rooms);
-});
-
-// 방을 만드는 엔드포인트
-app.post('/api/rooms', (req, res) => {
-  const { name } = req.body;
-  const newRoom = { id: rooms.length + 1, name, users: [] };
+// 방 생성 엔드포인트
+app.post('/create-room', (req, res) => {
+  const newRoom = {
+    id: rooms.length + 1,
+    name: req.body.name, // 방 이름
+    users: [] // 참여한 유저 목록
+  };
   rooms.push(newRoom);
-  res.status(201).json(newRoom);
+  res.json(newRoom);
 });
 
-// 방에 사용자를 추가하는 엔드포인트
-app.post('/api/rooms/:id/join', (req, res) => {
-  const roomId = parseInt(req.params.id);
-  const { username } = req.body;
+// 방 입장 엔드포인트
+app.post('/join-room/:roomId', (req, res) => {
+  const roomId = parseInt(req.params.roomId);
+  const user = req.body.user; // 유저 정보
 
   const room = rooms.find(room => room.id === roomId);
   if (!room) {
-    return res.status(404).json({ message: 'Room not found' });
+    return res.status(404).json({ error: 'Room not found' });
   }
 
-  room.users.push(username);
+  room.users.push(user);
   res.json(room);
 });
 
+// 서버 시작
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Express 서버가 http://localhost:${PORT} 포트에서 실행 중입니다.`);
 });
