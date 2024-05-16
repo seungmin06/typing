@@ -1,31 +1,43 @@
 // server.js
 
 const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-
-const PORT = process.env.PORT || 3000;
+const bodyParser = require('body-parser');
 
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
+const PORT = process.env.PORT || 5000;
 
-io.on('connection', (socket) => {
-  console.log('New client connected');
+// 방 정보를 저장할 배열
+let rooms = [];
 
-  socket.on('join_room', ({ username, room }) => {
-    socket.join(room);
-    console.log(`${username} joined room ${room}`);
-  });
+app.use(bodyParser.json());
 
-  socket.on('send_message', ({ username, room, message }) => {
-    // 여기서는 클라이언트에게 메시지를 전달하는 대신에, 방에 속한 클라이언트들에게 메시지를 전달해야 합니다.
-    io.to(room).emit('receive_message', { username, message });
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
-  });
+// 방 목록을 가져오는 엔드포인트
+app.get('/api/rooms', (req, res) => {
+  res.json(rooms);
 });
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// 방을 만드는 엔드포인트
+app.post('/api/rooms', (req, res) => {
+  const { name } = req.body;
+  const newRoom = { id: rooms.length + 1, name, users: [] };
+  rooms.push(newRoom);
+  res.status(201).json(newRoom);
+});
+
+// 방에 사용자를 추가하는 엔드포인트
+app.post('/api/rooms/:id/join', (req, res) => {
+  const roomId = parseInt(req.params.id);
+  const { username } = req.body;
+
+  const room = rooms.find(room => room.id === roomId);
+  if (!room) {
+    return res.status(404).json({ message: 'Room not found' });
+  }
+
+  room.users.push(username);
+  res.json(room);
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
